@@ -36,6 +36,7 @@ Route::get('/guest/category','GuestController@getCategory');
 Route::get('/guest/category/topCourse', 'GuestController@getCategoryWithTopCourse');
 Route::get('/guest/bot', 'GuestChatBotController@chatBot');
 
+Route::get('/guest/profileview', 'GuestProfileViewController@getProfile');
 Route::get('/guest/search', 'GuestSearchController@getItemsSearch');
 
 Route::get('/user/forgotPassword', 'UserController@forgotPassword');
@@ -44,6 +45,8 @@ Route::post('/user/forgotPassword', 'UserController@afterForgotPassword');
 Route::get('/customerVerify', function (\Illuminate\Http\Request $request) {
     return $request->all();
 })->name('customerVerify');
+
+
 //hung
 //Route::get('/guest/course/getlistcomment','GuestDetailCourseController@getListComment');
 //Route::get('/guest/course/gettop5course','GuestDetailCourseController@getTop5CourseByTopic');

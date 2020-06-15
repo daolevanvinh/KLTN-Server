@@ -20,9 +20,17 @@ class GuestSearchController extends BaseController
 
     public function getItemsSearch(Request $request) {
         $courses = DB::table('instructor_course')
+            ->where('instructor_course.public', '=', 1)
             ->join('pricetier', 'pricetier.priceTier_id', '=','instructor_course.priceTier_id')
             ->select('instructor_course.course_id',
                 "instructor_course.name",'pricetier.priceTier', 'instructor_course.updated_at')->get();
+//        $config = [
+//            'ffmpeg.binaries' => './ffmpeg/bin/ffmpeg.exe',
+//            'ffprobe.binaries' => './ffmpeg/bin/ffprobe.exe',
+//            'timeout' => 360, // The timeout for the underlying process
+//            'ffmpeg.threads' => 12, // The number of threads that FFMpeg should use
+//        ];
+//        $ffprobe = FFProbe::create($config);
         foreach ($courses as $course) {
             $tempCount = DB::table('student_course')
                 ->where('course_id', $course->course_id)->select(DB::raw('COUNT("user_id") as count'))->first();
@@ -30,20 +38,14 @@ class GuestSearchController extends BaseController
                 ->where('course_id', $course->course_id)
                 ->select('rating_value')->get();
 
-            $lessonList = DB::table('lesson')->where('course_id','=', $course->course_id)->get();
+            $lessonList = DB::table('lesson')->where('course_id','=', $course->course_id)
+                ->select('duration')->get();
             $totalTime = 0;
-            $config = [
-                'ffmpeg.binaries' => './ffmpeg/bin/ffmpeg.exe',
-                'ffprobe.binaries' => './ffmpeg/bin/ffprobe.exe',
-                'timeout' => 3600, // The timeout for the underlying process
-                'ffmpeg.threads' => 12, // The number of threads that FFMpeg should use
-            ];
-            $ffprobe = FFProbe::create($config);
             foreach ($lessonList as $lesson) {
-                $base_video_url = "https://localhost/KLTN-Server/public/uploads/videos".'/'
-                    .$course->course_id.'/'.$lesson->lesson_id.'.mp4';
-                $totalTime +=
-                    $ffprobe->format($base_video_url)->get('duration');
+//                $base_video_url = "https://localhost/KLTN-Server/public/uploads/videos".'/'
+//                    .$course->course_id.'/'.$lesson->lesson_id.'.mp4';
+                $totalTime += $lesson->duration;
+                    //$ffprobe->format($base_video_url)->get('duration');
             }
 
             $course->studentCount = $tempCount->count;
@@ -55,9 +57,7 @@ class GuestSearchController extends BaseController
 
             $course->totalVideo = $lessonList->count();
             $course->totalTime = gmdate('H:i:s', $totalTime);
-
-            $tempCourse = InstructorCourse::with('topicsEnable.category')->find($course->course_id);
-
+            $tempCourse = InstructorCourse::with('topicsEnable')->find($course->course_id);
             $course->topic = $tempCourse->topicsEnable;
         }
         return [

@@ -17,6 +17,7 @@ class InstructorCourse extends Model
             ->where('disable', false);
     }
 
+
     public function priceTier() {
         return $this->belongsTo(PriceTier::class,'priceTier_id','priceTier_id');
     }

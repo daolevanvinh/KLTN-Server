@@ -42,7 +42,7 @@ class UserCartController extends BaseController
                     $stuCourse->course_id = $course->course_id;
                     $stuCourse->save();
                     return [
-                        'msg' => 'Thêm thành công',
+                        'msg' => 'Thêm vào kho thành công',
                         'RequestSuccess' => true
                     ];
                 } else {
@@ -73,7 +73,7 @@ class UserCartController extends BaseController
                             array_push($tempCourseList, $temp);
                         }
                         return [
-                            'msg' => 'Thêm thành công',
+                            'msg' => 'Thêm vào giỏ hàng thành công',
                             'RequestSuccess' => true,
                             'list' => $tempCourseList
                         ];

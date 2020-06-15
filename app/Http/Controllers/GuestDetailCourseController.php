@@ -118,6 +118,13 @@ class GuestDetailCourseController extends BaseController
             ->where('public', 1)
             ->first();
         if($course) {
+//            $config = [
+//                'ffmpeg.binaries' => './ffmpeg/bin/ffmpeg.exe',
+//                'ffprobe.binaries' => './ffmpeg/bin/ffprobe.exe',
+//                'timeout' => 3600, // The timeout for the underlying process
+//                'ffmpeg.threads' => 12, // The number of threads that FFMpeg should use
+//            ];
+//            $ffprobe = FFProbe::create($config);
             $topics = DB::table('topic_course')
                         ->where('course_id', $course->course_id)->get();
             $ArrayCourse = [];
@@ -155,18 +162,12 @@ class GuestDetailCourseController extends BaseController
 //
 //                        'ffmpeg.binaries' => 'ffmpeg/bin/ffmpeg.exe',
 //                            'ffprobe.binaries' => 'ffmpeg/bin/ffprobe.exe',
-                        $config = [
-                            'ffmpeg.binaries' => './ffmpeg/bin/ffmpeg.exe',
-                            'ffprobe.binaries' => './ffmpeg/bin/ffprobe.exe',
-                            'timeout' => 3600, // The timeout for the underlying process
-                            'ffmpeg.threads' => 12, // The number of threads that FFMpeg should use
-                        ];
-                        $ffprobe = FFProbe::create($config);
+
                         foreach ($lessonList as $lesson) {
                             $base_video_url = "https://localhost/KLTN-Server/public/uploads/videos".'/'
                                 .$cs->course_id.'/'.$lesson->lesson_id.'.mp4';
-                            $totalTime +=
-                                $ffprobe->format($base_video_url)->get('duration');
+                            $totalTime += $lesson->duration;
+                                //$ffprobe->format($base_video_url)->get('duration');
                         }
 
                         $cs->studentCount = $tempCount->count;

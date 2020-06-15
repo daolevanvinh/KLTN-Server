@@ -8,6 +8,7 @@ use App\BillStudentCourse;
 use App\Cart;
 use App\InstructorCourse;
 use App\StudentCourse;
+use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\DB;
@@ -20,13 +21,16 @@ class VNPayController extends BaseController
         $user = $request->user;
         $carts = Cart::where('user_id', $user->user_id)->get();
         $totalPrice = 0;
+        if(!$carts || count($carts) == 0) {
+            return redirect('http://localhost:8081/mypage?state=11');
+        }
         Session::put('user_id', $user->user_id);
         foreach ($carts as $cart) {
             $course = InstructorCourse::with('priceTier')->find($cart->course_id);
             if($course) {
                 $totalPrice += $course->priceTier->priceTier;
             } else {
-                return ['msg' => 'Đã có lỗi xảy ra, vui lòng xem lại giỏ hàng', 'RequestSuccess' => false];
+                return redirect('http://localhost:8081/mypage?state=11');
             }
         }
 
@@ -97,7 +101,6 @@ class VNPayController extends BaseController
                 $stuCourse->course_id = $cart->course_id;
                 $stuCourse->save();
 
-
                 $bill = BillStudentCourse::where('user_id', $user_id)->where('course_id', $cart->course_id)->first();
                 $tempBill = new BillStudentCourse();
                 if($bill) {
@@ -105,7 +108,20 @@ class VNPayController extends BaseController
                 }
                 $tempBill->user_id = $cart->user_id;
                 $tempBill->course_id = $cart->course_id;
+                $currentCourse = DB::table('instructor_course')
+                            ->join('pricetier', 'instructor_course.priceTier_id','=','pricetier.priceTier_id')
+                            ->select('instructor_course.course_id', 'instructor_course.name', 'pricetier.priceTier',
+                                'instructor_course.updated_at as course_updated')
+                            ->where('instructor_course.course_id', $cart->course_id)
+                            ->first();
+                $tempBill->currentInfo = json_encode($currentCourse);
                 $tempBill->save();
+
+                $insCourse = InstructorCourse::with('instructor')->find($cart->course_id);
+                $instructor = User::find($insCourse->instructor->user_id);
+                $instructor->ewallet += $currentCourse->priceTier;
+                $instructor->save();
+
 
                 DB::table('cart')
                     ->where('user_id', $user_id)->where('course_id', $cart->course_id)->delete();

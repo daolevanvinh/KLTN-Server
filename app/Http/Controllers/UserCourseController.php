@@ -104,25 +104,6 @@ class UserCourseController extends BaseController
             foreach ($myCourses as $course) {
                 $wl = DB::table('what_learn_instructor_course')->where('course_id','=',$course->course_id)->get();
                 $lessonList = DB::table('lesson')->where('course_id','=', $course->course_id)->get();
-                $totalTime = 0;
-                //   /app/vendor/ffmpeg_bundle/ffmpeg/bin/ffmpeg
-                //   /app/vendor/ffmpeg_bundle/ffmpeg/bin/ffprobe
-                // ahihi
-                $config = [
-                    'ffmpeg.binaries' => './ffmpeg/bin/ffmpeg.exe',
-                    'ffprobe.binaries' => './ffmpeg/bin/ffprobe.exe',
-                    'timeout' => 3600, // The timeout for the underlying process
-                    'ffmpeg.threads' => 12, // The number of threads that FFMpeg should use
-                ];
-                $ffprobe = FFProbe::create($config);
-                foreach ($lessonList as $lesson) {
-                    $base_video_url = "https://localhost/KLTN-Server/public/uploads/videos".'/'
-                        .$course->course_id.'/'.$lesson->lesson_id.'.mp4';
-                    $totalTime +=
-                        $ffprobe
-                            ->format($base_video_url)
-                            ->get('duration');
-                }
                 $priceTier = DB::table('instructor_course')
                     ->join('pricetier','pricetier.priceTier_id','=','instructor_course.priceTier_id')
                     ->where('instructor_course.course_id','=',$course->course_id)
@@ -139,8 +120,6 @@ class UserCourseController extends BaseController
                     ->get();
 
                 $course->topicEnable = $topicEnable;
-                $course->totalVideo = $lessonList->count();
-                $course->totalTime = gmdate('H:i:s', $totalTime);
                 $course->priceTier = $priceTier->priceTier;
                 $course->whatLearn = $wl;
                 $course->commentCount = $courseComment->COUNT;

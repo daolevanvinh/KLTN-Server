@@ -21,4 +21,8 @@ class Topic extends Model
     public function category() {
         return $this->belongsTo(Category::class, 'category_id','category_id');
     }
+
+    public function category_id() {
+        return $this->belongsTo(Category::class, 'category_id','category_id')->select('category_id');
+    }
 }

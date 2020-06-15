@@ -111,14 +111,18 @@ class UserController extends BaseController
     }
 
     public function editProfile(Request $request) {
-        $user = User::find($request->user_id);
-        $user->profile = $request->profile;
-        $user->save();
-        return [
-            'msg' => 'Cập nhật thông tin thành công',
-            'user' => $user,
-            'RequestSuccess' => true
-        ];
+        $us = $request->user;
+        $user = User::find($us->user_id);
+        if($user) {
+            $user->profile = $request->profile;
+            $user->save();
+            return [
+                'msg' => 'Cập nhật thông tin thành công',
+                'user' => $user,
+                'RequestSuccess' => true
+            ];
+        }
+
     }
 
     public function forgotPassword(Request $request) {
@@ -163,6 +167,5 @@ class UserController extends BaseController
             'msg' => 'Đã có lỗi xảy ra !!!'
         ];
     }
-
 }
 

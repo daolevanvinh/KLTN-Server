@@ -10,7 +10,7 @@ class Lesson extends Model
 {
     protected $table = "lesson";
     protected $primaryKey = "lesson_id";
-    protected $fillable = ['title', 'description', 'course_id', 'commentsCount', 'views'];
+    protected $fillable = ['title', 'description', 'course_id', 'commentsCount', 'duration'];
 
     public function comments() {
         return $this->hasMany(LessonComment::class, 'lesson_id', 'lesson_id')

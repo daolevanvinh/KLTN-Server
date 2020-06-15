@@ -44,18 +44,18 @@ class GuestController extends BaseController
                 //   /app/vendor/ffmpeg_bundle/ffmpeg/bin/ffmpeg
                 //   /app/vendor/ffmpeg_bundle/ffmpeg/bin/ffprobe
                 // ahihi
-                $config = [
-                    'ffmpeg.binaries' => './ffmpeg/bin/ffmpeg.exe',
-                    'ffprobe.binaries' => './ffmpeg/bin/ffprobe.exe',
-                    'timeout' => 3600, // The timeout for the underlying process
-                    'ffmpeg.threads' => 12, // The number of threads that FFMpeg should use
-                ];
-                $ffprobe = FFProbe::create($config);
+//                $config = [
+//                    'ffmpeg.binaries' => './ffmpeg/bin/ffmpeg.exe',
+//                    'ffprobe.binaries' => './ffmpeg/bin/ffprobe.exe',
+//                    'timeout' => 3600, // The timeout for the underlying process
+//                    'ffmpeg.threads' => 12, // The number of threads that FFMpeg should use
+//                ];
+//                $ffprobe = FFProbe::create($config);
                 foreach ($lessonList as $lesson) {
                     $base_video_url = "https://localhost/KLTN-Server/public/uploads/videos".'/'
                         .$course->course_id.'/'.$lesson->lesson_id.'.mp4';
-                    $totalTime +=
-                        $ffprobe->format($base_video_url)->get('duration');
+                    $totalTime += $lesson->duration;
+                        //$ffprobe->format($base_video_url)->get('duration');
                 }
                 $priceTier = DB::table('instructor_course')
                     ->join('pricetier','pricetier.priceTier_id','=','instructor_course.priceTier_id')
