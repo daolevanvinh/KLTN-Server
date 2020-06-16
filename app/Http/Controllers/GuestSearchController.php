@@ -18,6 +18,41 @@ class GuestSearchController extends BaseController
         ];
     }
 
+    public function getItemSearchFromHeader(Request $request) {
+        $arr = [];
+        $instrutors = DB::table('user')
+                ->where('user.name', 'like', '%'.$request->search.'%')
+                ->join('instructor_course','instructor_course.user_id','=','user.user_id')
+                ->where('instructor_course.public', 1)
+                ->where('instructor_course.disable', 0)
+                ->leftJoin('course_comment','course_comment.course_id','=','instructor_course.course_id')
+                ->groupBy('user.user_id','user.name','user.app_id')
+                ->orderBy(DB::raw('COUNT(course_comment.rating_value)'))
+                ->take(5)
+                ->select('user.name as text','user.app_id as value')->get();
+        foreach ($instrutors as $instrutor) {
+            $instrutor->type = 0;
+            array_push($arr, $instrutor);
+        }
+
+        $courses = DB::table('instructor_course')
+            ->where('instructor_course.name', 'like', '%'.$request->search.'%')
+            ->where('instructor_course.public', 1)
+            ->where('instructor_course.disable', 0)
+            ->leftJoin('course_comment','course_comment.course_id','=','instructor_course.course_id')
+            ->groupBy('instructor_course.course_id','instructor_course.name')
+            ->orderBy(DB::raw('COUNT(course_comment.rating_value)'))
+            ->take(5)
+            ->select('instructor_course.name as text','instructor_course.course_id as value')->get();
+        foreach ($courses as $course) {
+            array_push($arr, $course);
+        }
+
+        return [
+            'list' => $arr
+        ];
+    }
+
     public function getItemsSearch(Request $request) {
         $courses = DB::table('instructor_course')
             ->where('instructor_course.public', '=', 1)

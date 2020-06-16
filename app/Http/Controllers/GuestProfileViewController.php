@@ -15,7 +15,10 @@ class GuestProfileViewController extends BaseController
         $ins = User::where('app_id', $app_id)->first();
         if($ins) {
             $courses = InstructorCourse::with('instructor','course_comment','priceTier')
-                ->where('user_id', '=',$ins->user_id)->get();
+                ->where('user_id', '=',$ins->user_id)
+                ->where('public',1)
+                ->where('disable',0)
+                ->get();
             return [
                 'object' => $ins,
                 'list' => $courses,

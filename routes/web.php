@@ -38,6 +38,7 @@ Route::get('/guest/bot', 'GuestChatBotController@chatBot');
 
 Route::get('/guest/profileview', 'GuestProfileViewController@getProfile');
 Route::get('/guest/search', 'GuestSearchController@getItemsSearch');
+Route::get('/guest/search/header', 'GuestSearchController@getItemSearchFromHeader');
 
 Route::get('/user/forgotPassword', 'UserController@forgotPassword');
 Route::post('/user/forgotPassword', 'UserController@afterForgotPassword');
