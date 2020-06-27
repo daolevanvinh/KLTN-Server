@@ -94,39 +94,50 @@ class VNPayController extends BaseController
         $user_id = Session::get('user_id');
         Session::put('user_id', 0);
         if($request->vnp_ResponseCode == '00') {
+
             $carts = Cart::where('user_id', $user_id)->get();
-            foreach ($carts as $cart) {
-                $stuCourse = new StudentCourse();
-                $stuCourse->user_id = $user_id;
-                $stuCourse->course_id = $cart->course_id;
-                $stuCourse->save();
 
-                $bill = BillStudentCourse::where('user_id', $user_id)->where('course_id', $cart->course_id)->first();
-                $tempBill = new BillStudentCourse();
-                if($bill) {
-                    $tempBill->bill_student_course_id = $bill->bill_student_course_id;
+            if(count($carts) > 0) {
+                $bill = new BillStudentCourse();
+                $bill->user_id = $user_id;
+                $bill->vnp_Amount = $request->vnp_Amount / 100;
+                $bill->vnp_BankCode= $request->vnp_BankCode;
+                $bill->vnp_BankTranNo = $request->vnp_BankTranNo;
+                $bill->vnp_CardType = $request->vnp_CardType;
+                $bill->vnp_TransactionNo =$request->vnp_TransactionNo;
+
+                $courses = [];
+                foreach ($carts as $cart) {
+                    $stuCourse = new StudentCourse();
+                    $stuCourse->user_id = $user_id;
+                    $stuCourse->course_id = $cart->course_id;
+                    $stuCourse->save();
+
+                    $currentCourse = DB::table('instructor_course')
+                        ->join('pricetier', 'instructor_course.priceTier_id','=','pricetier.priceTier_id')
+                        ->select('instructor_course.course_id', 'instructor_course.name', 'pricetier.priceTier',
+                            'instructor_course.updated_at as course_updated')
+                        ->where('instructor_course.course_id', $cart->course_id)
+                        ->first();
+
+                    array_push($courses, $currentCourse);
+                    $insCourse = InstructorCourse::with('instructor')->find($cart->course_id);
+                    $instructor = User::find($insCourse->instructor->user_id);
+                    $instructor->ewallet += $currentCourse->priceTier;
+                    $instructor->save();
+
+                    DB::table('cart')
+                        ->where('user_id', $user_id)->where('course_id', $cart->course_id)->delete();
                 }
-                $tempBill->user_id = $cart->user_id;
-                $tempBill->course_id = $cart->course_id;
-                $currentCourse = DB::table('instructor_course')
-                            ->join('pricetier', 'instructor_course.priceTier_id','=','pricetier.priceTier_id')
-                            ->select('instructor_course.course_id', 'instructor_course.name', 'pricetier.priceTier',
-                                'instructor_course.updated_at as course_updated')
-                            ->where('instructor_course.course_id', $cart->course_id)
-                            ->first();
-                $tempBill->currentInfo = json_encode($currentCourse);
-                $tempBill->save();
-
-                $insCourse = InstructorCourse::with('instructor')->find($cart->course_id);
-                $instructor = User::find($insCourse->instructor->user_id);
-                $instructor->ewallet += $currentCourse->priceTier;
-                $instructor->save();
+                $bill->currentInfo = json_encode($courses);
+                $bill->save();
 
 
-                DB::table('cart')
-                    ->where('user_id', $user_id)->where('course_id', $cart->course_id)->delete();
+
+
+                return redirect('http://localhost:8081/mypage?state='.$request->vnp_ResponseCode);
             }
-            return redirect('http://localhost:8081/mypage?state='.$request->vnp_ResponseCode);
+            return redirect('http://localhost:8081/mypage?state=10');
         }
     }
 }

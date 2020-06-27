@@ -11,6 +11,8 @@
 |
 */
 
+use App\Cart;
+
 Route::get('/', function () {
     return view('welcome');
 });
@@ -20,15 +22,12 @@ Route::get('/botman/tinker', 'BotManController@tinker');
 
 
 
-
-
 Route::post('/user', 'UserController@register');
 Route::post('/userLogin', 'UserController@login');
 
 
 Route::get('/admin', 'AdminController@register');
 Route::post('/adminLogin', 'AdminController@login');
-
 
 // guest
 
@@ -58,6 +57,11 @@ Route::get('/customerVerify', function (\Illuminate\Http\Request $request) {
 Route::get('/guest/course','GuestDetailCourseController@getDetailCourse');
 
 Route::group(['middleware' => 'jwt.myAuth'], function () {
+    Route::post('/broadcasting/auth', 'AnnouceController@Auth');
+    Route::get('/broadcasting/auth', 'AnnouceController@Auth');
+    Route::options('/broadcasting/auth', 'AnnouceController@Auth');
+
+
     Route::get('/getUser', 'UserController@getUserInfo');
     Route::get('/test', function (\Illuminate\Http\Request $request) {
         return 'ahihi';
@@ -130,6 +134,17 @@ Route::group(['middleware' => 'jwt.myAuth'], function () {
     Route::post('/user/course/insertcomment','GuestDetailCourseController@insertComment');
     Route::post('/user/addtocart','UserCartController@addToCart');
     Route::post('/user/getcart','UserCartController@getCarts');
+
+    //
+    Route::get('/user/history/transaction' , 'UserHistoryTransaction@getHistoryTransaction');
+
+
+    Route::post('/user/annouce', 'AnnouceController@sendAnnouce');
+    Route::get('/user/annouce', 'AnnouceController@insGetAnnouces');
+    Route::get('/stu/annouce', 'AnnouceController@studentGetAnnouces');
+    Route::get('/stu/annouce/course', 'AnnouceController@studentGetAnnoucesByCourse');
+    Route::get('/user/channel', 'AnnouceController@getChannelList');
+    Route::get('/user/channel/course', 'AnnouceController@getCourseList');
 });
 
 

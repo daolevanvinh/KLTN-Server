@@ -11,6 +11,11 @@
 |
 */
 
-Broadcast::channel('App.User.{id}', function ($user, $id) {
-    return (int) $user->id === (int) $id;
-});
+//use App\InstructorCourse;
+//Broadcast::channel('App.User.{id}', function ($user, $id) {
+//    return (int) $user->id === (int) $id;
+//});
+\Log::info('This is channel.php');
+
+
+Broadcast::channel('InstructorCourse.{course_id}', );

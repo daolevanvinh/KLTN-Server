@@ -3,6 +3,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Annouce;
+use App\AnnouceRoom;
+use App\Events\AnnoucePosted;
 use App\InstructorCourse;
 use App\Lesson;
 use FFMpeg\FFProbe;
@@ -34,6 +37,28 @@ class UserLessonController extends BaseController
             JSON_UNESCAPED_UNICODE);
     }
 
+    function sendAnnouce($text, $course_id) {
+        $annouce = new Annouce();
+        $annouce->text = $text;
+        $annouce->save();
+
+        $stuList = DB::table('student_course')
+            ->where('course_id', $course_id)
+            ->select('user_id')->get();
+        foreach ($stuList as $stu) {
+            $room = new AnnouceRoom();
+            $room->fromCourse = $course_id;
+            $room->toUser = $stu->user_id;
+            $room->annouce_id = $annouce->annouce_id;
+            $room->save();
+        }
+        $data = [
+            'text' => $annouce->text,
+            'course_id' => $course_id
+        ];
+        event(new AnnoucePosted($data));
+    }
+
     public function insertLesson(Request $request) {
         $user = $request->user;
         $course = InstructorCourse::where('user_id', $user->user_id)->where('course_id', $request->course_id)->first();
@@ -59,6 +84,9 @@ class UserLessonController extends BaseController
                 $lesson->duration =
                     $ffprobe->format($base_video_url)->get('duration');
                 $lesson->save();
+
+
+                $this->sendAnnouce('Khóa học '.$course->name.' đã đang video mới', $course->course_id);
 
                 $list = DB::table('lesson')
                     ->join('instructor_course','lesson.course_id','=','instructor_course.course_id')
@@ -116,7 +144,7 @@ class UserLessonController extends BaseController
                     $lesson->duration =
                         $ffprobe->format($base_video_url)->get('duration');
                 }
-
+                $this->sendAnnouce('Khóa học '.$course->name.' đã cập nhật', $course->course_id);
                 $lesson->save();
 
                 //// data return

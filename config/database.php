@@ -122,7 +122,7 @@ return [
 
     'redis' => [
 
-        'client' => 'predis',
+        'client' => env('REDIS_CLIENT', 'predis'),
 
         'default' => [
             'host' => env('REDIS_HOST', '127.0.0.1'),
@@ -137,7 +137,11 @@ return [
             'port' => env('REDIS_PORT', 6379),
             'database' => env('REDIS_CACHE_DB', 1),
         ],
-
+        'options' => [
+            'cluster' => env('REDIS_CLUSTER', 'redis'),
+            // comment dòng bên dưới
+            //'prefix' => env('REDIS_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_').'_database_'),
+        ]
     ],
 
 ];

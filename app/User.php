@@ -29,6 +29,13 @@ class User extends Authenticatable implements JWTSubject
             ->where('disable',0);
     }
 
+    public function annouces_send() {
+        return $this->hasMany(Annouce::class, 'fromUser','user_id');
+    }
+
+    public function annouces_receive() {
+        return $this->hasMany(Annouce::class, 'toUser','user_id');
+    }
 
     /**
      * The attributes that should be hidden for arrays.

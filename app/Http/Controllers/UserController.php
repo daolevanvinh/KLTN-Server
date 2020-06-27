@@ -32,12 +32,22 @@ class UserController extends BaseController
     public function register(Request $request) {
         $us = User::find($request->user_id);
         if(!$us) {
+
+
+
             $input = $request->only('user_id','name','password');
             $user = new User();
             $user->user_id = $input['user_id'];
             $user->name = $input['name'];
             $user->password = bcrypt($input['password']);
+            Storage::disk('public_uploads')->copy('/default/avatar.png','users/'.$user->user_id.'/avatar.png');
+
+
             $user->save();
+
+
+
+
             return ['msg' => 'Đăng ký thành công',
                 'RequestSuccess' => true];
         }
