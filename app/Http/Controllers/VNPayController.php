@@ -36,10 +36,11 @@ class VNPayController extends BaseController
 
         session(['cost_id' => $request->id]);
         session(['url_prev' => url()->previous()]);
-        //SZM993R4
-        //JJUZVZFGCCQFLRAHFQYAXHNTPOWAMIDT
-        $vnp_TmnCode = "8ZOGO9RW"; //Mã website tại VNPAY
-        $vnp_HashSecret = "KDASWVSUZEFSCKKWZPRQEEKFIAHQZULP"; //Chuỗi bí mật
+//        $vnp_TmnCode = "8ZOGO9RW"; //Mã website tại VNPAY
+//        $vnp_HashSecret = "KDASWVSUZEFSCKKWZPRQEEKFIAHQZULP"; //Chuỗi bí mật
+        $vnp_TmnCode = "RRREF0IA"; //Mã website tại VNPAY
+        $vnp_HashSecret = "WAOIRQBRQSXGMREAAKRFONXJOGLGQPAU"; //Chuỗi bí mật
+
         $vnp_Url = "http://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
         $vnp_Returnurl = "http://goodlearning.com/callbackVPN";
         $vnp_TxnRef = date("YmdHis"); //Mã đơn hàng. Trong thực tế Merchant cần insert đơn hàng vào DB và gửi mã này sang VNPAY

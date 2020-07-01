@@ -74,10 +74,25 @@ class UserLessonController extends BaseController
 
 
                 $lesson = new Lesson($request->all());
-                $lesson->save();
                 Storage::disk('public_uploads')
                     ->putFileAs('videos/'.$course->course_id, $request->file('video'),
                         $lesson->lesson_id.'.'.'mp4');
+
+
+                $json_info_resourse = array();
+                for($i =0 ;$i < $request->totalResourse; $i++) {
+                    if($request->hasFile('resourse'.$i)) {
+                        $name = $request->file('resourse'.$i)->getClientOriginalName();
+                        Storage::disk('public_uploads')
+                            ->putFileAs('videos/'.$course->course_id, $request->file('resourse'.$i),
+                                $name);
+                        $json_info_resourse[] = ['name' => $name];
+                    }
+                }
+                $lesson->json_info_resourse = json_enco;
+
+
+
                 $ffprobe = FFProbe::create($config);
                 $base_video_url = "https://localhost/KLTN-Server/public/uploads/videos".'/'
                     .$course->course_id.'/'.$lesson->lesson_id.'.mp4';
@@ -86,7 +101,7 @@ class UserLessonController extends BaseController
                 $lesson->save();
 
 
-                $this->sendAnnouce('Khóa học '.$course->name.' đã đang video mới', $course->course_id);
+
 
                 $list = DB::table('lesson')
                     ->join('instructor_course','lesson.course_id','=','instructor_course.course_id')
@@ -102,6 +117,8 @@ class UserLessonController extends BaseController
                     'RequestSuccess' => true,
                     'list' => $list
                 ];
+
+                $this->sendAnnouce('Course: '.$course->name.' is upload a new video', $course->course_id);
                 return response()->json($data,
                     200,
                     ['Content-type'=> 'application/json; charset=utf-8'],

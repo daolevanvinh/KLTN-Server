@@ -13,7 +13,7 @@ use phpDocumentor\Reflection\Types\Array_;
 class GuestChatBotController extends BaseController
 {
     public function chatBot(Request $request) {
-        $qs = QuestionBot::where("question", $request->question)->first();
+        $qs = QuestionBot::where("question", 'like', '%'.$request->question.'%')->first();
         if($qs) {
             if($qs->type_question_bot_id == 1) {
                 $msgBotList = DB::table("message_bot")
