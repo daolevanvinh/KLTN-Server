@@ -39,7 +39,9 @@ class GuestController extends BaseController
                 ->get();
             foreach ($courseTopList as $course) {
                 $wl = DB::table('what_learn_instructor_course')->where('course_id','=',$course->course_id)->get();
-                $lessonList = DB::table('lesson')->where('course_id','=', $course->course_id)->get();
+                $lessonList = DB::table('lesson')
+                    ->where('disable','=',0)
+                    ->where('course_id','=', $course->course_id)->get();
                 $totalTime = 0;
                 //   /app/vendor/ffmpeg_bundle/ffmpeg/bin/ffmpeg
                 //   /app/vendor/ffmpeg_bundle/ffmpeg/bin/ffprobe

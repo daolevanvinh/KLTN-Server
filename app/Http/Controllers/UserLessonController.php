@@ -8,6 +8,7 @@ use App\AnnouceRoom;
 use App\Events\AnnoucePosted;
 use App\InstructorCourse;
 use App\Lesson;
+use App\User;
 use FFMpeg\FFProbe;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
@@ -18,23 +19,22 @@ class UserLessonController extends BaseController
 {
     public function getLessons(Request $request) {
         $user = $request->user;
-        $list = DB::table('lesson')
-            ->join('instructor_course','lesson.course_id','=','instructor_course.course_id')
-            ->leftJoin('lesson_comment','lesson.lesson_id','=','lesson_comment.lesson_id')
-            ->where('instructor_course.user_id','=',$user->user_id)
-            ->where('lesson.course_id','=', $request->course_id)
-            ->groupBy('lesson_comment.lesson_comment_id','lesson.lesson_id','lesson.title', 'lesson.description',
-                'lesson.course_id','lesson.updated_at', 'lesson.duration')
-            ->select('lesson.lesson_id','lesson.title', 'lesson.description',
-                'lesson.course_id','lesson.updated_at', DB::raw('COUNT(lesson_comment.lesson_comment_id) as commentCount')
-                , 'lesson.duration')->get();
-        $data =  [
-            'list' => $list
+        $course = DB::table('instructor_course')
+            ->where('user_id', $user->user_id)
+            ->where('course_id', $request->course_id)->first();
+        if($course) {
+            $data =  [
+                'list' => $this->getList($request,$course, $user)
+            ];
+            return response()->json($data,
+                200,
+                ['Content-type'=> 'application/json; charset=utf-8'],
+                JSON_UNESCAPED_UNICODE);
+        }
+        return [
+            'RequestSuccess' => false,
+            'msg' => 'There are something wrong!'
         ];
-        return response()->json($data,
-            200,
-            ['Content-type'=> 'application/json; charset=utf-8'],
-            JSON_UNESCAPED_UNICODE);
     }
 
     function sendAnnouce($text, $course_id) {
@@ -59,21 +59,54 @@ class UserLessonController extends BaseController
         event(new AnnoucePosted($data));
     }
 
+    function getList(Request $request, $course,$user) {
+        $list = DB::table('lesson')
+            ->join('instructor_course','lesson.course_id','=','instructor_course.course_id')
+            ->leftJoin('lesson_comment','lesson.lesson_id','=','lesson_comment.lesson_id')
+            ->where('instructor_course.user_id','=',$user->user_id)
+            ->where('lesson.course_id','=', $request->course_id)
+            ->where('lesson.disable','=', 0)
+            ->groupBy('lesson_comment.lesson_comment_id','lesson.lesson_id','lesson.title', 'lesson.description',
+                'lesson.course_id','lesson.updated_at', 'lesson.duration','lesson.json_info_resourse','lesson.chapter_id')
+            ->select('lesson.lesson_id','lesson.title', 'lesson.description',
+                'lesson.course_id','lesson.updated_at', DB::raw('COUNT(lesson_comment.lesson_comment_id) as commentCount')
+                , 'lesson.duration','lesson.json_info_resourse','lesson.chapter_id')->get();
+
+
+        $tempList = [];
+        $chapterList = json_decode($course->json_info_chapter);
+        foreach ($list as $item) {
+            foreach ($chapterList as  $chapter) {
+                if($item->chapter_id == $chapter->value) {
+                    array_push($tempList, [
+                        "lesson_id" => $item->lesson_id,
+                        "title"=> $item->title,
+                        "description" => $item->description,
+                        "course_id" => $item->course_id,
+                        "updated_at" => $item->updated_at,
+                        "commentCount" => $item->commentCount,
+                        "duration" => $item->duration,
+                        "json_info_resourse" => json_decode($item->json_info_resourse),
+                        "chapter_id" => $item->chapter_id,
+                        "chapter" => [
+                            'chapter_id' => $chapter->value,
+                            'chapter_text' => $chapter->text
+                        ]
+                    ]);
+                }
+            }
+        }
+
+        return $tempList;
+    }
+
     public function insertLesson(Request $request) {
         $user = $request->user;
         $course = InstructorCourse::where('user_id', $user->user_id)->where('course_id', $request->course_id)->first();
         if($course) {
             if($request->hasFile('video')) {
-
-                $config = [
-                    'ffmpeg.binaries' => './ffmpeg/bin/ffmpeg.exe',
-                    'ffprobe.binaries' => './ffmpeg/bin/ffprobe.exe',
-                    'timeout' => 3600, // The timeout for the underlying process
-                    'ffmpeg.threads' => 12, // The number of threads that FFMpeg should use
-                ];
-
-
                 $lesson = new Lesson($request->all());
+                $lesson->save();
                 Storage::disk('public_uploads')
                     ->putFileAs('videos/'.$course->course_id, $request->file('video'),
                         $lesson->lesson_id.'.'.'mp4');
@@ -84,15 +117,21 @@ class UserLessonController extends BaseController
                     if($request->hasFile('resourse'.$i)) {
                         $name = $request->file('resourse'.$i)->getClientOriginalName();
                         Storage::disk('public_uploads')
-                            ->putFileAs('videos/'.$course->course_id, $request->file('resourse'.$i),
+                            ->putFileAs('resourses/'.$course->course_id.'/'.$lesson->lesson_id, $request->file('resourse'.$i),
                                 $name);
                         $json_info_resourse[] = ['name' => $name];
                     }
                 }
-                $lesson->json_info_resourse = json_enco;
+                $lesson->json_info_resourse = json_encode($json_info_resourse);
 
+                $lesson->chapter_id = $request->chapter_id;
 
-
+                $config = [
+                    'ffmpeg.binaries' => './ffmpeg/bin/ffmpeg.exe',
+                    'ffprobe.binaries' => './ffmpeg/bin/ffprobe.exe',
+                    'timeout' => 3600, // The timeout for the underlying process
+                    'ffmpeg.threads' => 12, // The number of threads that FFMpeg should use
+                ];
                 $ffprobe = FFProbe::create($config);
                 $base_video_url = "https://localhost/KLTN-Server/public/uploads/videos".'/'
                     .$course->course_id.'/'.$lesson->lesson_id.'.mp4';
@@ -101,21 +140,10 @@ class UserLessonController extends BaseController
                 $lesson->save();
 
 
-
-
-                $list = DB::table('lesson')
-                    ->join('instructor_course','lesson.course_id','=','instructor_course.course_id')
-                    ->leftJoin('lesson_comment','lesson.lesson_id','=','lesson_comment.lesson_id')
-                    ->where('instructor_course.user_id','=',$user->user_id)
-                    ->where('lesson.course_id','=', $request->course_id)
-                    ->groupBy('lesson_comment.lesson_comment_id','lesson.lesson_id','lesson.title', 'lesson.description',
-                        'lesson.course_id','lesson.updated_at', 'lesson.duration')
-                    ->select('lesson.lesson_id','lesson.title', 'lesson.description',
-                        'lesson.course_id','lesson.updated_at', DB::raw('COUNT(lesson_comment.lesson_comment_id) as commentCount'), 'lesson.duration')->get();
                 $data =[
-                    'msg' => 'Thêm thành công!',
+                    'msg' => 'Create Success!',
                     'RequestSuccess' => true,
-                    'list' => $list
+                    'list' => $this->getList($request,$course,$user)
                 ];
 
                 $this->sendAnnouce('Course: '.$course->name.' is upload a new video', $course->course_id);
@@ -125,13 +153,13 @@ class UserLessonController extends BaseController
                     JSON_UNESCAPED_UNICODE);
             } else {
                 return [
-                    'msg' => 'Chưa tải file hoặc file không đúng định dạng!',
+                    'msg' => 'Invalid File Type!',
                     'RequestSuccess' => false
                 ];
             }
         }
         return [
-            'msg' => 'Không tìm thấy khóa học của bạn',
+            'msg' => 'There are something wrong',
             'RequestSuccess' =>  false
         ];
     }
@@ -161,23 +189,37 @@ class UserLessonController extends BaseController
                     $lesson->duration =
                         $ffprobe->format($base_video_url)->get('duration');
                 }
-                $this->sendAnnouce('Khóa học '.$course->name.' đã cập nhật', $course->course_id);
+
+                $json_info_resourse = array();
+                for($i =0 ;$i < $request->totalResourse; $i++) {
+                    if($request->hasFile('resourse'.$i)) {
+                        $name = $request->file('resourse'.$i)->getClientOriginalName();
+                        Storage::disk('public_uploads')
+                            ->putFileAs('resourses/'.$course->course_id.'/'.$lesson->lesson_id, $request->file('resourse'.$i),
+                                $name);
+                        $json_info_resourse[] = ['name' => $name];
+                    } else {
+                        if($request->input('resourseNew'.$i) == 'false' && $request->input('resourseDelete'.$i) == 'true') {
+                            Storage::disk('public_uploads')
+                                ->delete('resourses/'.$course->course_id.'/'.$request->input('resourseName'.$i).'.mp4');
+                        } else {
+                            $name = $request->input('resourseName'.$i);
+                            $json_info_resourse[] = ['name' => $name];
+                        }
+                    }
+                }
+                $lesson->json_info_resourse = json_encode($json_info_resourse);
+
+                $lesson->chapter_id = $request->chapter_id;
+
+                $this->sendAnnouce('Course: '.$course->name.' updated', $course->course_id);
                 $lesson->save();
 
                 //// data return
-                $list = DB::table('lesson')
-                    ->join('instructor_course','lesson.course_id','=','instructor_course.course_id')
-                    ->leftJoin('lesson_comment','lesson.lesson_id','=','lesson_comment.lesson_id')
-                    ->where('instructor_course.user_id','=',$user->user_id)
-                    ->where('lesson.course_id','=', $request->course_id)
-                    ->groupBy('lesson_comment.lesson_comment_id','lesson.lesson_id','lesson.title', 'lesson.description',
-                        'lesson.course_id','lesson.updated_at', 'lesson.duration')
-                    ->select('lesson.lesson_id','lesson.title', 'lesson.description',
-                        'lesson.course_id','lesson.updated_at', 'lesson.duration', DB::raw('COUNT(lesson_comment.lesson_comment_id) as commentCount'))->get();
                 $data =[
-                    'msg' => 'Chỉnh sửa thành công!',
+                    'msg' => 'Updated!',
                     'RequestSuccess' => true,
-                    'list' => $list
+                    'list' => $this->getList($request,$course,$user)
                 ];
                 return response()->json($data,
                     200,
@@ -185,12 +227,30 @@ class UserLessonController extends BaseController
                     JSON_UNESCAPED_UNICODE);
             }
             return response()
-                ->json(['msg' => 'Không tìm thấy bài học', 'RequestSuccess' => false], 200, ['Content-type'=> 'application/json; charset=utf-8'], JSON_UNESCAPED_UNICODE);
+                ->json(['msg' => 'There are something wrong!', 'RequestSuccess' => false], 200, ['Content-type'=> 'application/json; charset=utf-8'], JSON_UNESCAPED_UNICODE);
         }
         return [
-            'msg' => 'Không tìm thấy khóa học của bạn',
+            'msg' => 'There are something wrong!',
             'RequestSuccess' =>  false
         ];
     }
 
+    public function deleteLesson(Request $request) {
+        $user = $request->user;
+        $course = InstructorCourse::where('user_id', $user->user_id)->where('course_id', $request->course_id)->first();
+        if($course) {
+            $lesson = Lesson::find($request->lesson_id);
+            $lesson->disable = 1;
+            $lesson->save();
+            return [
+                'RequestSuccess' => true,
+                'msg' => 'Deleted',
+                'list' => $this->getList($request,$course,$user)
+            ];
+        }
+        return [
+            'RequestSuccess' => false,
+            'msg' => 'There are something wrong!'
+        ];
+    }
 }

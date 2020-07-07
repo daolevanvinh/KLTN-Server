@@ -11,6 +11,7 @@ use App\Topic;
 use App\topic_course;
 use App\User;
 use App\WhatYouLearn;
+use Carbon\Carbon;
 use FFMpeg\FFProbe;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
@@ -50,7 +51,7 @@ class UserCourseController extends BaseController
 
         return [
             'RequestSuccess' => true,
-            'msg' => 'Tạo khóa học thành công',
+            'msg' => 'Create Course Success',
             'list' => InstructorCourse::with('whatYouLearn','priceTier', 'topicsEnable')->where('user_id', $user->user_id)->get()
         ];
     }
@@ -70,11 +71,11 @@ class UserCourseController extends BaseController
             $course->save();
             return [
                 'RequestSuccess' => true,
-                'msg' => 'Cập nhập thành công'
+                'msg' => 'Updated'
             ];
         }
         return [
-            'msg' => 'Không tìm thấy khóa học',
+            'msg' => 'Not Find Course',
             'RequestSuccess' => false
         ];
     }
@@ -102,8 +103,11 @@ class UserCourseController extends BaseController
                 ->groupBy('instructor_course.updated_at', 'user.name','description','instructor_course.course_id', 'instructor_course.name','student_course.course_id')
                 ->get();
             foreach ($myCourses as $course) {
-                $wl = DB::table('what_learn_instructor_course')->where('course_id','=',$course->course_id)->get();
-                $lessonList = DB::table('lesson')->where('course_id','=', $course->course_id)->get();
+                $wl = DB::table('what_learn_instructor_course')
+                    ->where('course_id','=',$course->course_id)->get();
+                $lessonList = DB::table('lesson')
+                    ->where('disable', '=',0)
+                    ->where('course_id','=', $course->course_id)->get();
                 $priceTier = DB::table('instructor_course')
                     ->join('pricetier','pricetier.priceTier_id','=','instructor_course.priceTier_id')
                     ->where('instructor_course.course_id','=',$course->course_id)
@@ -133,8 +137,63 @@ class UserCourseController extends BaseController
             ];
         }
         return [
-            'msg' => 'Lỗi đăng nhập',
+            'msg' => 'There are something wrong',
             'RequestSuccess' => false
         ];
     }
+
+
+
+    public function addChapter(Request $request) {
+        $user = $request->user;
+        $course = InstructorCourse::where('user_id', $user->user_id)->where('course_id', $request->course_id)->first();
+        if($course) {
+            $chapters = json_decode($course->json_info_chapter);
+            $id = Carbon::now()->toDateTimeString();
+            array_push($chapters, ['value' => $id, 'text' => $request->text ]);
+            $course->json_info_chapter = json_encode($chapters);
+            $course->save();
+            return [
+                'msg' => 'Add Success',
+                'RequestSuccess' => true,
+                'chapters' => $chapters
+            ];
+        }
+        return [
+            'msg' => 'There are something wrong'
+        ];
+    }
+
+    public function updateChapter(Request $request) {
+        $user = $request->user;
+        $course = InstructorCourse::where('user_id', $user->user_id)->where('course_id', $request->course_id)->first();
+        if($course) {
+            $course->json_info_chapter = $request->json_info_chapter;
+            $course->save();
+            return [
+                'msg' => 'Updated!',
+                'RequestSuccess' => true
+            ];
+        }
+        return [
+            'msg' => 'There are something wrong'
+        ];
+    }
+
+    public function deleteChapter(Request $request) {
+        $user = $request->user;
+        $course = InstructorCourse::where('user_id', $user->user_id)->where('course_id', $request->course_id)->first();
+        if($course) {
+            $course->json_info_chapter = $request->json_info_chapter;
+            $course->save();
+            return [
+                'msg' => 'Deleted!',
+                'RequestSuccess' => true
+            ];
+        }
+        return [
+            'msg' => 'There are something wrong'
+        ];
+    }
+
 }

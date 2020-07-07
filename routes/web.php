@@ -110,6 +110,7 @@ Route::group(['middleware' => 'jwt.myAuth'], function () {
     Route::get('/user/lesson', 'UserLessonController@getLessons');
     Route::post('/user/lesson', 'UserLessonController@insertLesson');
     Route::post('/user/lesson/edit', 'UserLessonController@updateLesson');
+    Route::delete('/user/lesson', 'UserLessonController@deleteLesson');
 
     Route::get('/user/courseLike', 'UserCourseLikeController@getLikeList');
     Route::post('/user/courseLike', 'UserCourseLikeController@likeOrUnlike');
@@ -145,6 +146,11 @@ Route::group(['middleware' => 'jwt.myAuth'], function () {
     Route::get('/stu/annouce/course', 'AnnouceController@studentGetAnnoucesByCourse');
     Route::get('/user/channel', 'AnnouceController@getChannelList');
     Route::get('/user/channel/course', 'AnnouceController@getCourseList');
+
+
+    Route::post('/user/chapter', 'UserCourseController@addChapter');
+    Route::patch('/user/chapter', 'UserCourseController@updateChapter');
+    Route::delete('/user/chapter', 'UserCourseController@deleteChapter');
 });
 
 

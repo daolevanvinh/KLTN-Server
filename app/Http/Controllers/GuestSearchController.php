@@ -74,6 +74,7 @@ class GuestSearchController extends BaseController
                 ->select('rating_value')->get();
 
             $lessonList = DB::table('lesson')->where('course_id','=', $course->course_id)
+                ->where('disable','=',0)
                 ->select('duration')->get();
             $totalTime = 0;
             foreach ($lessonList as $lesson) {

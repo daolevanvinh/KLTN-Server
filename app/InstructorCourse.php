@@ -35,7 +35,8 @@ class InstructorCourse extends Model
     }
 
     public function lessons() {
-        return $this->hasMany(Lesson::class,'course_id', 'course_id');
+        return $this->hasMany(Lesson::class,'course_id', 'course_id')
+            ->where('disable','=',0);
     }
 
 }

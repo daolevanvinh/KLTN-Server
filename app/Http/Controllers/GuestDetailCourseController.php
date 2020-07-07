@@ -154,7 +154,7 @@ class GuestDetailCourseController extends BaseController
                             ->where('course_id', $cs->course_id)
                             ->select('rating_value')->get();
 
-                        $lessonList = DB::table('lesson')->where('course_id','=', $cs->course_id)->get();
+                        $lessonList = DB::table('lesson')->where('disable','=',0)->where('course_id','=', $cs->course_id)->get();
                         $totalTime = 0;
                         //   /app/vendor/ffmpeg_bundle/ffmpeg/bin/ffmpeg
                         //   /app/vendor/ffmpeg_bundle/ffmpeg/bin/ffprobe
