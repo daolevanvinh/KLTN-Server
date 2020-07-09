@@ -4,6 +4,7 @@
 namespace App\Http\Controllers;
 use App\InstructorCourse;
 use App\CourseComment;
+use App\Lesson;
 use App\User;
 use App\StudentCourse;
 use FFMpeg\FFProbe;
@@ -23,91 +24,6 @@ class GuestDetailCourseController extends BaseController
             'model'=>User::class,
         ]]);
     }
-//    public function getDetailCourse(Request $request){
-//        $course_id = $request->course_id;
-//        $detailCourse = DB::table('instructor_course')
-//        ->where("instructor_course.course_id",$course_id)
-//        ->first();
-//
-//
-//        $amountReview = DB::table('course_comment')
-//        ->where("course_comment.course_id","=",$course_id)
-//        ->count(DB::raw('course_comment.course_id'));
-//        if($detailCourse)
-//        {
-//            return [
-//                'RequestSuccess' => true,
-//                'detail' => $detailCourse,
-//                'amounReview' => $amountReview,
-//            ];
-//        }
-//        else{
-//            return [
-//                'RequestSuccess' => false,
-//                'msg' => "Không tìm thấy khóa học"
-//            ];
-//        }
-//    }
-//    public function getInfoInstructor(Request $request){
-//        $course_id = 1;
-//        $user_id = DB::table('user')
-//        ->join("instructor_course","user.user_id","=","instructor_course.user_id")
-//        ->where("instructor_course.course_id",'=',$course_id)
-//        ->select("instructor_course.user_id")
-//        ->first();
-//
-//        $real = json_decode( json_encode($user_id));
-//
-//        $totalCourse = DB::table('instructor_course')
-//        ->where("instructor_course.user_id",'=', $real , true)
-//        ->count(DB::raw('user_id'));
-//
-//        $infoInstructor = DB::table('user')
-//        ->join("instructor_course","user.user_id","=","instructor_course.user_id")
-//        ->where("instructor_course.user_id",'=',$real, true)
-//        ->select("user.user_id","user.address","user.name","user.profile")
-//        ->first();
-//
-//        return [
-//            'RequestSuccess' => true,
-//            'info' => $user_id,
-//            'total' => $totalCourse,
-//            'infoInstructor' => $infoInstructor
-//        ];
-//    }
-//    public function getTop5CourseByTopic(Request $request){
-//        $course_id = 1;
-//        $topic_id = DB::table('instructor_course')
-//        ->join('topic_course','instructor_course.course_id','=','topic_course.course_id')
-//        ->where('instructor_course.course_id','=',$course_id)
-//        ->select('topic_course.topic_id')
-//        ->get();
-//
-//        $real = json_decode( json_encode($topic_id), true);
-//
-//        //Lấy top 5 course có nhiều người đăng ký nhất
-//        $topfive = DB::table('student_course')
-//        ->join("instructor_course","student_course.course_id","=","instructor_course.course_id")
-//        ->join('topic_course','instructor_course.course_id','=','topic_course.course_id')
-//        ->where('topic_course.topic_id','=', $real)
-//        ->orderBy("course_count","desc")
-//        ->groupBy("instructor_course.course_id","instructor_course.name","instructor_course.user_id")
-//        ->select('instructor_course.course_id','instructor_course.name','instructor_course.user_id',DB::raw("COUNT('course_id') AS course_count"))
-//        ->take(2)
-//        ->get();
-//
-//        $count = $topfive->count();
-//        return [
-//            'RequestSuccess' => true,
-//            'list' => $topic_id,
-//            'topfive' => $topfive,
-//            'count' =>  $count,
-//        ];
-//
-//    }
-
-
-
 
 
     public function getDetailCourse(Request $request) {
@@ -125,6 +41,32 @@ class GuestDetailCourseController extends BaseController
 //                'ffmpeg.threads' => 12, // The number of threads that FFMpeg should use
 //            ];
 //            $ffprobe = FFProbe::create($config);
+
+            $chapterList = json_decode($course->json_info_chapter);
+            $totalDurations = 0;
+            foreach ($chapterList as $chapter) {
+                $lessonList = DB::table('lesson')
+                    ->where('chapter_id', '=', $chapter->value)
+                    ->where('disable', '=',0)
+                    ->select('title', 'duration', 'havePreview','lesson_id')
+                    ->get();
+                $tempLessonList = [];
+                $durations = 0;
+                foreach ($lessonList as $index => $ls) {
+                    $temp = [
+                        'lesson_id' => $ls->lesson_id,
+                        'title' => $ls->title,
+                        'duration' => gmdate('H:i:s', $ls->duration),
+                        'havePreview' => $ls->havePreview
+                    ];
+                    $durations += $ls->duration;
+                    array_push($tempLessonList, $temp);
+                }
+                $totalDurations += $durations;
+                $chapter->duration = gmdate('H:i:s', $durations);
+                $chapter->lessonList = $tempLessonList;
+            }
+
             $topics = DB::table('topic_course')
                         ->where('course_id', $course->course_id)->get();
             $ArrayCourse = [];
@@ -185,6 +127,8 @@ class GuestDetailCourseController extends BaseController
             $course->top5 = json_decode($temp->take(5));
             $course->whatLearn =$course->whatYouLearn($course);
             $course->priceTier = $course->priceTier($course);
+            $course->chapterList = $chapterList;
+            $course->totalDurations = gmdate('H:i:s', $totalDurations);
             return [
                 'object' => $course,
                 'RequestSuccess' => true
@@ -211,7 +155,7 @@ class GuestDetailCourseController extends BaseController
         $comment->rating_value = $ratingValue;
         $comment->save();
         return [
-            'msg'=>"Đã thêm comment"
+            'msg'=>"Thanks for your previews"
         ];
     }
     public function getListComment(Request $request){

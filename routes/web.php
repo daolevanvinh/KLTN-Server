@@ -93,6 +93,10 @@ Route::group(['middleware' => 'jwt.myAuth'], function () {
     Route::patch('/admin/bot/message', "ChatBotController@updateMessageBot");
     Route::delete('/admin/bot/message', "ChatBotController@deleteMessageBot");
 
+    Route::get('/admin/storagePackage','AdminStoragePackage@getStoragePackageList');
+    Route::post('/admin/storagePackage','AdminStoragePackage@insertStoragePackage');
+    Route::patch('/admin/storagePackage','AdminStoragePackage@updateStoragePackage');
+    Route::delete('/admin/storagePackage','AdminStoragePackage@deleteStoragePackage');
     // user role
 
     Route::get('/user','UserController@getUserInfo');

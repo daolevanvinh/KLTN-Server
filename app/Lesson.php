@@ -10,7 +10,7 @@ class Lesson extends Model
 {
     protected $table = "lesson";
     protected $primaryKey = "lesson_id";
-    protected $fillable = ['title', 'description', 'course_id', 'commentsCount', 'duration'];
+    protected $fillable = ['title', 'description', 'course_id', 'commentsCount', 'duration', 'havePreview'];
     /**
      * @var false|string
      */

@@ -66,9 +66,9 @@ class UserLessonController extends BaseController
             ->where('instructor_course.user_id','=',$user->user_id)
             ->where('lesson.course_id','=', $request->course_id)
             ->where('lesson.disable','=', 0)
-            ->groupBy('lesson_comment.lesson_comment_id','lesson.lesson_id','lesson.title', 'lesson.description',
+            ->groupBy('lesson_comment.lesson_comment_id','lesson.havePreview','lesson.lesson_id','lesson.title', 'lesson.description',
                 'lesson.course_id','lesson.updated_at', 'lesson.duration','lesson.json_info_resourse','lesson.chapter_id')
-            ->select('lesson.lesson_id','lesson.title', 'lesson.description',
+            ->select('lesson.lesson_id','lesson.havePreview','lesson.title', 'lesson.description',
                 'lesson.course_id','lesson.updated_at', DB::raw('COUNT(lesson_comment.lesson_comment_id) as commentCount')
                 , 'lesson.duration','lesson.json_info_resourse','lesson.chapter_id')->get();
 
@@ -78,6 +78,8 @@ class UserLessonController extends BaseController
         foreach ($list as $item) {
             foreach ($chapterList as  $chapter) {
                 if($item->chapter_id == $chapter->value) {
+                    $preview = false;
+                    if($item->havePreview == 1) $preview = true;
                     array_push($tempList, [
                         "lesson_id" => $item->lesson_id,
                         "title"=> $item->title,
@@ -91,7 +93,8 @@ class UserLessonController extends BaseController
                         "chapter" => [
                             'chapter_id' => $chapter->value,
                             'chapter_text' => $chapter->text
-                        ]
+                        ],
+                        'havePreview' => $preview
                     ]);
                 }
             }
@@ -106,10 +109,14 @@ class UserLessonController extends BaseController
         if($course) {
             if($request->hasFile('video')) {
                 $lesson = new Lesson($request->all());
+                $havePreview = 0;
+                if($request->havePreview=='true') $havePreview = 1;
+                $lesson->havePreview = $havePreview;
                 $lesson->save();
                 Storage::disk('public_uploads')
                     ->putFileAs('videos/'.$course->course_id, $request->file('video'),
                         $lesson->lesson_id.'.'.'mp4');
+
 
 
                 $json_info_resourse = array();
@@ -172,6 +179,9 @@ class UserLessonController extends BaseController
             if($lesson) {
                 $lesson->title = $request->title;
                 $lesson->description = $request->description;
+                $havePreview = 0;
+                if($request->havePreview=='true') $havePreview = 1;
+                $lesson->havePreview = $havePreview;
                 if($request->hasFile('video')) {
                     Storage::disk('public_uploads')->delete('videos/'.$course->course_id.'/'.$lesson->lesson_id.'.mp4');
                     Storage::disk('public_uploads')
