@@ -53,6 +53,7 @@ class AdminStoragePackage extends BaseController
             $package->name = $request->name;
             $package->storage_size = $request->storage_size;
             $package->price = $request->price;
+            $package->note = $request->note;
             $package->save();
             return [
                 'list' => $this->getList(),

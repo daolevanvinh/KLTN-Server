@@ -19,22 +19,22 @@ class GuestController extends BaseController
     }
 
     public function getCategoryWithTopCourse() {
-        $categoryList = Category::all();
+        $categoryList = Category::where('disable', 0)->get();
         foreach ($categoryList as $category) {
             $courseTopList = DB::table('category')
                 ->join('topic','topic.category_id','=','category.category_id')
                 ->join('topic_course','topic_course.topic_id','=','topic.topic_id')
                 ->join('instructor_course','instructor_course.course_id','=','topic_course.course_id')
-                ->join('student_course','student_course.course_id', '=', 'instructor_course.course_id')
+//                ->join('student_course','student_course.course_id', '=', 'instructor_course.course_id')
                 ->join('user','user.user_id','=','instructor_course.user_id')
                 ->where('category.category_id','=',$category->category_id)
                 ->where('instructor_course.public','=',1)
                 ->where('instructor_course.disable','=',0)
                 ->select( 'instructor_course.course_id','user.name as author'
-                    ,'description','instructor_course.name', 'instructor_course.updated_at',DB::raw("count('student_course.course_id') as CourseCount"))
-                ->orderBy('CourseCount', 'desc')
+                    ,'description','instructor_course.name', 'instructor_course.updated_at')
+//                ->orderBy('CourseCount', 'desc')
                 ->distinct()
-                ->groupBy('instructor_course.updated_at','category.category_id', 'user.name','description','topic.topic_id','instructor_course.course_id', 'instructor_course.name','student_course.course_id')
+                ->groupBy('instructor_course.updated_at','category.category_id', 'user.name','description','topic.topic_id','instructor_course.course_id', 'instructor_course.name')
                 ->take(10)
                 ->get();
             foreach ($courseTopList as $course) {

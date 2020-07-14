@@ -7,6 +7,7 @@ use App\CourseComment;
 use App\InstructorCourse;
 use App\Lesson;
 use App\PriceTier;
+use App\StudentCourse;
 use App\Topic;
 use App\topic_course;
 use App\User;
@@ -86,63 +87,78 @@ class UserCourseController extends BaseController
         ];
     }
 
+    function mypageGetCourses($user) {
+        $myCourses = DB::table('student_course')
+            ->join('instructor_course','instructor_course.course_id', '=', 'student_course.course_id')
+            ->join('user', 'user.user_id','=','student_course.user_id')
+            ->leftJoin('course_comment', function ($q)  {
+                $q->on('user.user_id','=', 'course_comment.user_id')
+                    ->on('course_comment.course_id','=', 'student_course.course_id');
+            })
+            ->where('instructor_course.public','=',1)
+            ->where('instructor_course.disable','=',0)
+            ->where('user.user_id', $user->user_id)
+            ->select( 'instructor_course.course_id','user.name as author','course_comment.course_comment_id as commented'
+                ,'description','instructor_course.name', 'instructor_course.updated_at',DB::raw("count('student_course.course_id') as CourseCount"))
+            ->orderBy('CourseCount', 'desc')
+            ->distinct()
+            ->groupBy('instructor_course.updated_at','course_comment.course_comment_id', 'user.name','description','instructor_course.course_id', 'instructor_course.name','student_course.course_id')
+            ->get();
+        foreach ($myCourses as $course) {
+            $wl = DB::table('what_learn_instructor_course')
+                ->where('course_id','=',$course->course_id)->get();
+            $priceTier = DB::table('instructor_course')
+                ->join('pricetier','pricetier.priceTier_id','=','instructor_course.priceTier_id')
+                ->where('instructor_course.course_id','=',$course->course_id)
+                ->select('priceTier')
+                ->first();
+            $courseComment = CourseComment::where('course_id', $course->course_id)
+                ->select(DB::raw("COUNT('*') as COUNT"))
+                ->first();
+            $topicEnable = DB::table('topic_course')
+                ->where('course_id', $course->course_id)
+                ->join('topic', 'topic.topic_id', '=','topic_course.topic_id')
+                ->where('topic.disable', false)
+                ->select('topic.topic_id','topic.name')
+                ->get();
 
+            $course->topicEnable = $topicEnable;
+            $course->priceTier = $priceTier->priceTier;
+            $course->whatLearn = $wl;
+            $course->commentCount = $courseComment->COUNT;
+            if($courseComment->COUNT > 0)
+                $course->rating = $courseComment->sum('rating_value') / $courseComment->COUNT;
+            else
+                $course->rating = 0;
+        }
+        return $myCourses;
+    }
     public function studentGetCourses(Request $request) {
         $user = $request->user;
-        if(User::find($user->user_id)) {
-            $myCourses = DB::table('student_course')
-                ->join('instructor_course','instructor_course.course_id', '=', 'student_course.course_id')
-                ->join('user', 'user.user_id','=','instructor_course.user_id')
-                ->where('instructor_course.public','=',1)
-                ->where('instructor_course.disable','=',0)
-                ->where('student_course.user_id', $user->user_id)
-                ->select( 'instructor_course.course_id','user.name as author'
-                    ,'description','instructor_course.name', 'instructor_course.updated_at',DB::raw("count('student_course.course_id') as CourseCount"))
-                ->orderBy('CourseCount', 'desc')
-                ->distinct()
-                ->groupBy('instructor_course.updated_at', 'user.name','description','instructor_course.course_id', 'instructor_course.name','student_course.course_id')
-                ->get();
-            foreach ($myCourses as $course) {
-                $wl = DB::table('what_learn_instructor_course')
-                    ->where('course_id','=',$course->course_id)->get();
-                $lessonList = DB::table('lesson')
-                    ->where('disable', '=',0)
-                    ->where('course_id','=', $course->course_id)->get();
-                $priceTier = DB::table('instructor_course')
-                    ->join('pricetier','pricetier.priceTier_id','=','instructor_course.priceTier_id')
-                    ->where('instructor_course.course_id','=',$course->course_id)
-                    ->select('priceTier')
-                    ->first();
-                $courseComment = CourseComment::where('course_id', $course->course_id)
-                    ->select(DB::raw("COUNT('*') as COUNT"))
-                    ->first();
-                $topicEnable = DB::table('topic_course')
-                    ->where('course_id', $course->course_id)
-                    ->join('topic', 'topic.topic_id', '=','topic_course.topic_id')
-                    ->where('topic.disable', false)
-                    ->select('topic.topic_id','topic.name')
-                    ->get();
 
-                $course->topicEnable = $topicEnable;
-                $course->priceTier = $priceTier->priceTier;
-                $course->whatLearn = $wl;
-                $course->commentCount = $courseComment->COUNT;
-                if($courseComment->COUNT > 0)
-                    $course->rating = $courseComment->sum('rating_value') / $courseComment->COUNT;
-                else
-                    $course->rating = 0;
-            }
-            return [
-                'list' => $myCourses
-            ];
-        }
         return [
-            'msg' => 'There are something wrong',
-            'RequestSuccess' => false
+            'list' => $this->mypageGetCourses($user)
         ];
     }
 
-
+    public function studentCommentCourse(Request $request) {
+        $user = $request->user;
+        $stuCourse = StudentCourse::where('course_id', $request->course_id)->where('user_id', $user->user_id)->first();
+        if($stuCourse) {
+            $comment = new CourseComment($request->all());
+            $comment->user_id = $user->user_id;
+            $comment->save();
+            return [
+                'RequestSuccess' => true,
+                'msg' => 'Commented!',
+                'list' => $this->mypageGetCourses($user)
+            ];
+        }
+        return [
+            'RequestSuccess' => false,
+            'msg' => 'There are something wrong!'
+        ];
+    }
 
     public function addChapter(Request $request) {
         $user = $request->user;

@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Admin;
 use App\User;
 use Closure;
 use Tymon\JWTAuth\Exceptions\JWTException;
@@ -24,7 +25,8 @@ class VerifyJWTToken
             $user = JWTAuth::toUser();
             if($user != null) {
                 $request->merge([
-                    'user' => User::with('card')->find($user->user_id)
+                    'user' => User::with('card')->find($user->user_id),
+                    'admin' => $user
                 ]);
             } else {
                 return response()->json(['errorToken' => true, 'msg' => 'Lỗi đăng nhập, vui lòng đăng nhập lại']);

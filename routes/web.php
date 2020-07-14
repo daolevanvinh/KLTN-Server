@@ -110,6 +110,9 @@ Route::group(['middleware' => 'jwt.myAuth'], function () {
     Route::get('/user/course', 'UserCourseController@getCourses');
     Route::patch('/user/course', 'UserCourseController@publicOrUnPublicCourse');
     Route::get('/user/course/priceTier', 'UserCourseController@getPriceTier');
+    Route::post('/user/courseComment', 'UserCourseController@studentCommentCourse');
+    Route::get('/user/storagePack', 'UserStoragePackage@getStorePackgetList');
+
 
     Route::get('/user/lesson', 'UserLessonController@getLessons');
     Route::post('/user/lesson', 'UserLessonController@insertLesson');
@@ -126,6 +129,7 @@ Route::group(['middleware' => 'jwt.myAuth'], function () {
 
 
     Route::get('/user/payment', 'VNPayController@create');
+    Route::get('/user/storagePackage/payment', 'VNPayController@createForStoragePackage');
     Route::get('/user/student/courses', 'UserCourseController@studentGetCourses');
     Route::get('/user/student/lesson', 'UserStudentLessonController@getLesson');
     Route::get('/user/student/lesson/comment', 'UserStudentLessonController@getComments');
@@ -155,6 +159,19 @@ Route::group(['middleware' => 'jwt.myAuth'], function () {
     Route::post('/user/chapter', 'UserCourseController@addChapter');
     Route::patch('/user/chapter', 'UserCourseController@updateChapter');
     Route::delete('/user/chapter', 'UserCourseController@deleteChapter');
+
+
+
+    //hung
+    Route::get("/admin/users","AdminUsersController@getListUsers");
+    Route::post("/admin/users","AdminUsersController@insertUser");
+    Route::delete("/admin/users","AdminUsersController@deleteUser");
+    Route::patch('/admin/users','AdminUsersController@activeUser');
+    Route::put("/admin/users","AdminUsersController@editUser");
+
+    Route::get('/admin','AdminController@getAdminInfo');
+    Route::post('/admin/edit/info','AdminController@editAdminInfo');
+    Route::patch('/admin/changepassword','AdminController@adminChangePassword');
 });
 
 
@@ -166,3 +183,32 @@ Route::get('/redirect/{social}', 'SocialAuthController@redirect');
 Route::get('/callback/{social}', 'SocialAuthController@callback');
 
 Route::get('/callbackVPN', 'VNPayController@callback');
+
+Route::get('/storagePackage/callbackVPN', 'VNPayController@callbackForStoragePackage');
+
+//hung
+Route::get('/admin/detailstatistical',"AdminStatisticalController@getDetailInfoStatisticalPer");
+Route::get('/admin/statistical',"AdminStatisticalController@getInfoStatistical");
+
+Route::get('/admin/coursestatistical',"AdminStatisticalController@getInfoCourseSatistical");
+Route::get('/admin/getlistcourse',"AdminCourseController@getListCourse");
+Route::delete('/admin/unactivecourse',"AdminCourseController@unactiveCourse");
+Route::get('/admin/activecourse',"AdminCourseController@activeCourse");
+
+Route::get('/admin/getlistpricetier','AdminPriceController@getListPriceTier');
+Route::delete('/admin/deletepricetier','AdminPriceController@deletePricetier');
+Route::get("/admin/insertpricetier","AdminPriceController@insertPricetier");
+
+Route::get('/admin/getlistcoursebyprice','AdminPriceController@getListCoursebyPrice');
+
+Route::get('/admin/getlistmoneytype','AdminPriceController@getListMoneytype');
+
+Route::get('/admin/getlistcoursebymoneytype','AdminPriceController@getListCoursebyMoneytype');
+Route::delete('/admin/deletemoneytype','AdminPriceController@deleteMoneytype');
+Route::get('/admin/insertmoneytype','AdminPriceController@insertMoneytype');
+
+
+
+Route::get('/test', function () {
+
+});

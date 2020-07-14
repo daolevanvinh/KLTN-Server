@@ -61,4 +61,51 @@ class AdminController  extends BaseController
         }
         return $error;
     }
+
+    public function getAdminInfo(Request $request){
+        $admin = $request->admin;//User::find($request->user->user_id);
+
+//        $token = JWTAuth::FromUser($admin);
+        if(!$admin) {
+            return ['msg' => 'Error',
+                'RequestSuccess' => false,
+//                'data' => $token->admin_id,
+//                'token' => $token
+            ];
+        }
+        return ['msg' => 'Tài khoản đã tồn tại',
+            'RequestSuccess' => false,
+            'admin' => $admin
+        ];
+    }
+    public function editAdminInfo(Request $request){
+        $admin = $request->user;
+        $admin->name = $request->name;
+        $admin->phone = $request->phone;
+        $admin->address = $request->address;
+        $admin->save();
+        return [
+            'msg' => "Cập nhật thông tin thành công",
+            'admin' => $admin,
+            'RequestSuccess' => true
+        ];
+    }
+    public function adminChangePassword(Request $request){
+        $admin = $request->user;
+
+        // return[
+        //     'pass' => $pass,
+        //     'fsdfds' => Hash::check($request->password, Admin::find($admin->admin_id)->password)
+        // ];
+        if($admin && Hash::check($request->password, $admin->password)) {
+            $admin->password = bcrypt($request->newPassword);
+            $admin->save();
+            return ['msg' => 'Đổi mật khẩu thành công', 'RequestSuccess' => true, 'admin' => $admin];
+        }
+        return [
+            'msg' => 'Mật khẩu hiện tại không đúng',
+            'RequestSuccess' => false
+        ];
+
+    }
 }
