@@ -97,6 +97,7 @@ Route::group(['middleware' => 'jwt.myAuth'], function () {
     Route::post('/admin/storagePackage','AdminStoragePackage@insertStoragePackage');
     Route::patch('/admin/storagePackage','AdminStoragePackage@updateStoragePackage');
     Route::delete('/admin/storagePackage','AdminStoragePackage@deleteStoragePackage');
+
     // user role
 
     Route::get('/user','UserController@getUserInfo');
@@ -113,6 +114,8 @@ Route::group(['middleware' => 'jwt.myAuth'], function () {
     Route::post('/user/courseComment', 'UserCourseController@studentCommentCourse');
     Route::get('/user/storagePack', 'UserStoragePackage@getStorePackgetList');
 
+    Route::get('/user/storageUser', 'UserStorageUser@getStoreUserList');
+    Route::get('/user/statistics', 'UserStorageUser@getMyCourse');
 
     Route::get('/user/lesson', 'UserLessonController@getLessons');
     Route::post('/user/lesson', 'UserLessonController@insertLesson');
@@ -207,8 +210,23 @@ Route::get('/admin/getlistcoursebymoneytype','AdminPriceController@getListCourse
 Route::delete('/admin/deletemoneytype','AdminPriceController@deleteMoneytype');
 Route::get('/admin/insertmoneytype','AdminPriceController@insertMoneytype');
 
-
-
-Route::get('/test', function () {
-
-});
+//
+//
+//Route::get('/test', 'Test@store');
+//
+//Route::get('/test1', function () {
+//    $format = new \FFMpeg\Format\Video\X264('libmp3lame', 'libx264');
+//    $format->setKiloBitrate(250);
+//    $lowBitrate = ($format);
+//    $format->setKiloBitrate(500);
+//    $midBitrate = $format;
+//    $format->setKiloBitrate(1000);
+//    $highBitrate = $format;
+//    \ProtoneMedia\LaravelFFMpeg\Support\FFMpeg::fromDisk('public_uploads')->open('155.mp4')
+//        ->exportForHLS()
+//        ->setSegmentLength(60) // optional
+//        ->addFormat($lowBitrate)
+//        ->save('adaptive_steve.m3u8');
+//
+//    return 'success';
+//});

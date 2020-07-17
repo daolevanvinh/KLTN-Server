@@ -148,7 +148,8 @@ return [
         Illuminate\View\ViewServiceProvider::class,
         Tymon\JWTAuth\Providers\LaravelServiceProvider::class,
         Laravel\Socialite\SocialiteServiceProvider::class,
-        Pbmedia\LaravelFFMpeg\FFMpegServiceProvider::class,
+        ProtoneMedia\LaravelFFMpeg\Support\ServiceProvider::class,
+
         /*
          * Package Service Providers...
          */
@@ -213,8 +214,7 @@ return [
         'JWTAuth' => Tymon\JWTAuth\Facades\JWTAuth::class,
         'JWTFactory' => Tymon\JWTAuth\Facades\JWTFactory::class,
         'Socialite' => Laravel\Socialite\Facades\Socialite::class,
-        'FFMpegLLL' => Pbmedia\LaravelFFMpeg\FFMpegFacade::class
-
+        'FFMpeg' => ProtoneMedia\LaravelFFMpeg\Support\FFMpeg::class
     ],
 
 ];

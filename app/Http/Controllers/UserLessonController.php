@@ -7,7 +7,9 @@ use App\Annouce;
 use App\AnnouceRoom;
 use App\Events\AnnoucePosted;
 use App\InstructorCourse;
+use App\Jobs\ConvertVideoForStreaming;
 use App\Lesson;
+use App\StorageUser;
 use App\User;
 use FFMpeg\FFProbe;
 use Illuminate\Http\Request;
@@ -15,7 +17,7 @@ use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
-class UserLessonController extends BaseController
+class UserLessonController extends Controller
 {
     public function getLessons(Request $request) {
         $user = $request->user;
@@ -66,9 +68,9 @@ class UserLessonController extends BaseController
             ->where('instructor_course.user_id','=',$user->user_id)
             ->where('lesson.course_id','=', $request->course_id)
             ->where('lesson.disable','=', 0)
-            ->groupBy('lesson_comment.lesson_comment_id','lesson.havePreview','lesson.lesson_id','lesson.title', 'lesson.description',
+            ->groupBy('lesson_comment.lesson_comment_id','lesson.video_processing','lesson.havePreview','lesson.lesson_id','lesson.title', 'lesson.description',
                 'lesson.course_id','lesson.updated_at', 'lesson.duration','lesson.json_info_resourse','lesson.chapter_id')
-            ->select('lesson.lesson_id','lesson.havePreview','lesson.title', 'lesson.description',
+            ->select('lesson.lesson_id','lesson.video_processing','lesson.havePreview','lesson.title', 'lesson.description',
                 'lesson.course_id','lesson.updated_at', DB::raw('COUNT(lesson_comment.lesson_comment_id) as commentCount')
                 , 'lesson.duration','lesson.json_info_resourse','lesson.chapter_id')->get();
 
@@ -90,6 +92,7 @@ class UserLessonController extends BaseController
                         "duration" => $item->duration,
                         "json_info_resourse" => json_decode($item->json_info_resourse),
                         "chapter_id" => $item->chapter_id,
+                        'video_processing' => $item->video_processing,
                         "chapter" => [
                             'chapter_id' => $chapter->value,
                             'chapter_text' => $chapter->text
@@ -117,7 +120,11 @@ class UserLessonController extends BaseController
                     ->putFileAs('videos/'.$course->course_id, $request->file('video'),
                         $lesson->lesson_id.'.'.'mp4');
 
+                $storage_user = StorageUser::find($user->user_id);
+                $storage_user->used_space += $request->file('video')->getSize();
+                $storage_user->save();
 
+                $this->dispatch(new ConvertVideoForStreaming($lesson));
 
                 $json_info_resourse = array();
                 for($i =0 ;$i < $request->totalResourse; $i++) {
@@ -187,6 +194,8 @@ class UserLessonController extends BaseController
                     Storage::disk('public_uploads')
                         ->putFileAs('videos/'.$course->course_id, $request->file('video'),
                             $lesson->lesson_id.'.'.'mp4');
+
+                    $this->dispatch(new ConvertVideoForStreaming($lesson));
                     $config = [
                         'ffmpeg.binaries' => './ffmpeg/bin/ffmpeg.exe',
                         'ffprobe.binaries' => './ffmpeg/bin/ffprobe.exe',
@@ -223,6 +232,10 @@ class UserLessonController extends BaseController
                 $lesson->chapter_id = $request->chapter_id;
 
                 $this->sendAnnouce('Course: '.$course->name.' updated', $course->course_id);
+
+
+
+
                 $lesson->save();
 
                 //// data return

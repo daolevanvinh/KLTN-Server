@@ -104,7 +104,7 @@ class UserController extends BaseController
         Storage::disk('public_uploads')->delete('users/'.$user->user_id.'/avatar.png');
         Storage::disk('public_uploads')->putFileAs('users/'.$user->user_id, $request->file('avatar'), 'avatar.png');
         return [
-            'msg' => 'Cập nhật thông tin hành công',
+            'msg' => 'Updated!',
             'user' => $user,
             'RequestSuccess' => true
         ];

@@ -42,12 +42,12 @@ class UserCartController extends BaseController
                     $stuCourse->course_id = $course->course_id;
                     $stuCourse->save();
                     return [
-                        'msg' => 'Thêm vào kho thành công',
+                        'msg' => 'ADD Success',
                         'RequestSuccess' => true
                     ];
                 } else {
                     return [
-                        'msg' => 'Khóa học đã tồn tại trong kho',
+                        'msg' => 'This course already exists',
                         'RequestSuccess' => false
                     ];
                 }
@@ -73,13 +73,13 @@ class UserCartController extends BaseController
                             array_push($tempCourseList, $temp);
                         }
                         return [
-                            'msg' => 'Thêm vào giỏ hàng thành công',
+                            'msg' => 'ADD To Cart Success',
                             'RequestSuccess' => true,
                             'list' => $tempCourseList
                         ];
                     }
                     return [
-                        'msg' => 'Khóa học đã có trong giỏ hàng',
+                        'msg' => 'This course already exissts',
                         'RequestSuccess' => false
                     ];
                 }
@@ -129,7 +129,7 @@ class UserCartController extends BaseController
         }
         return [
             'RequestSuccess'=>false,
-            'msg'=> 'Không tìm thấy sản phẩm trong giỏ hàng của bạn'
+            'msg'=> 'Not Found'
         ];
     }
 }

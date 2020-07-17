@@ -6,9 +6,7 @@ namespace App\Http\Controllers;
 use App\Annouce;
 use App\AnnouceRoom;
 use App\Events\AnnoucePosted;
-use App\InstructorCourse;
 use App\StudentCourse;
-use App\User;
 use App\Events\MessagePosted;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
@@ -44,7 +42,7 @@ class AnnouceController extends BaseController
             ];
             event(new AnnoucePosted($data));
             return [
-                'msg' => 'Gửi thành công!',
+                'msg' => 'Sent!',
                 'RequestSuccess' => true
             ];
         } else {
@@ -118,13 +116,12 @@ class AnnouceController extends BaseController
         ];
     }
 
+
     public function getChannelList(Request $request) {
         $user = $request->user;
         $courseList = StudentCourse::where('user_id', $user->user_id)->select('course_id')->get();
-
         return [
             'list' => $courseList
         ];
-
     }
 }

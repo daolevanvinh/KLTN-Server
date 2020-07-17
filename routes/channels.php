@@ -18,4 +18,6 @@
 \Log::info('This is channel.php');
 
 
-Broadcast::channel('InstructorCourse.{course_id}', );
+Broadcast::channel('InstructorCourse.{course_id}' );
+
+Broadcast::channel('Lesson.{lesson_id}' );
